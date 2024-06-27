@@ -1,6 +1,6 @@
-# state_change_demo
+# Firebase Authentication
 
-States and how they affect each other
+Firebase Authentication for log in and log out
 
 ## Getting Started
 
