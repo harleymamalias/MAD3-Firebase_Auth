@@ -1,84 +1,76 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:state_change_demo/src/screens/key_example.dart';
-import 'package:state_change_demo/src/screens/no_key_example.dart';
-import 'package:state_change_demo/src/screens/simple_counter.screen.dart';
-import 'package:state_change_demo/src/screens/simple_counter_with_initial_value.screen.dart';
-import 'package:state_change_demo/src/screens/stfulP_stfulP.dart';
-import 'package:state_change_demo/src/screens/stfulP_stlssC.dart';
-
+import 'package:state_change_demo/src/dialogs/waiting_dialog.dart';
+import '../controllers/auth_controller.dart';
 import '../routing/router.dart';
+import 'auth/login.screen.dart';
 
 class IndexScreen extends StatelessWidget {
-  /// "/"
   static const String route = '/';
-
-  /// "Index Screen"
-  static const String name = 'Index Screen';
+  static const String name = 'Profile Screen';
 
   const IndexScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(IndexScreen.name),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SingleChildScrollView(
+      body: Stack(
+        children: [
+          Positioned(
+            top: -75,
+            child: Image.asset(
+              'assets/images/profile_bg.png',
+              fit: BoxFit.cover,
+              width: size.width,
+              height: size.height * .5,
+            ),
+          ),
+          Positioned(
+            top: 100,
+            left: (size.width / 2) - 75,
             child: Column(
               children: [
-                ListTile(
-                  onTap: () {
-                    GlobalRouter.I.router.push(SimpleCounterScreen.path);
-
-                    /// /simple-counter
-                  },
-                  title: const Text(SimpleCounterScreen.name),
-                  trailing: const Icon(Icons.chevron_right),
+                Image.asset(
+                  'assets/images/user.png',
+                  fit: BoxFit.cover,
+                  width: 100,
+                  height: 100,
                 ),
-                ListTile(
-                  onTap: () {
-                    GoRouter.of(context)
-                        .push(SimpleCounterScreenWithInitialValue.path);
-                  },
-                  title: const Text(SimpleCounterScreenWithInitialValue.name),
-                  trailing: const Icon(Icons.chevron_right),
+                const SizedBox(
+                  height: 20,
                 ),
-                ListTile(
-                  onTap: () {
-                    GoRouter.of(context).push(StatefulParent.path);
-                  },
-                  title: const Text(StatefulParent.name),
-                  trailing: const Icon(Icons.chevron_right),
+                const Text('John Doe',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white)),
+                const SizedBox(
+                  height: 200,
                 ),
-                ListTile(
-                  onTap: () {
-                    GoRouter.of(context).push(StatefulParentAndChild.path);
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: const Color(0xFF242F9B),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    minimumSize: const Size(150, 48),
+                  ),
+                  onPressed: () {
+                    WaitingDialog.show(context,
+                        future: AuthController.I.logout());
+                    GlobalRouter.I.router.go(LoginScreen.route);
                   },
-                  title: const Text(StatefulParentAndChild.name),
-                  trailing: const Icon(Icons.chevron_right),
-                ),
-                ListTile(
-                  onTap: () {
-                    GoRouter.of(context).push(KeyExample.path);
-                  },
-                  title: const Text(KeyExample.name),
-                  trailing: const Icon(Icons.chevron_right),
-                ),
-                ListTile(
-                  onTap: () {
-                    GoRouter.of(context).push(NoKeyExample.path);
-                  },
-                  title: const Text(NoKeyExample.name),
-                  trailing: const Icon(Icons.chevron_right),
-                ),
+                  icon: const Icon(Icons.logout_rounded),
+                  label: const Text('logout'),
+                )
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
