@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:state_change_demo/src/enum/enum.dart';
@@ -13,28 +17,71 @@ class AuthController with ChangeNotifier {
 
   static AuthController get I => GetIt.instance<AuthController>();
 
+  late StreamSubscription<User?> currentAuthedUser;
+
   AuthState state = AuthState.unauthenticated;
+
   SimulatedAPI api = SimulatedAPI();
 
-  login(String userName, String password) async {
-    bool isLoggedIn = await api.login(userName, password);
-    if (isLoggedIn) {
-      state = AuthState.authenticated;
-      //should store session
+  final FirebaseFirestore firestore_db = FirebaseFirestore.instance;
 
-      notifyListeners();
+  listen() {
+    currentAuthedUser =
+        FirebaseAuth.instance.authStateChanges().listen(handleUserChanges);
+  }
+
+  void handleUserChanges(User? user) {
+    if (user == null) {
+      state = AuthState.unauthenticated;
+    } else {
+      state = AuthState.authenticated;
+    }
+    notifyListeners();
+  }
+
+  login(String userName, String password) async {
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: userName, password: password);
+      handleUserChanges(userCredential.user);
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  register(String email, String password) async {
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+      User? user = userCredential.user;
+
+      if (user != null) {
+        await firestore_db.collection('users').doc(user.uid).set(
+          {
+            'userId': user.uid,
+            'email': email,
+            'createdAt': FieldValue.serverTimestamp(),
+          },
+        );
+      }
+      handleUserChanges(user);
+    } catch (e) {
+      print(e);
     }
   }
 
   ///write code to log out the user and add it to the home page.
-  logout() {
-    //should clear session
+  logout() async {
+    await FirebaseAuth.instance.signOut();
+    handleUserChanges(null);
   }
 
   ///must be called in main before runApp
   ///
   loadSession() async {
-    //check secure storage method
+    listen();
+    User? user = FirebaseAuth.instance.currentUser;
+    handleUserChanges(user);
   }
 
   ///https://pub.dev/packages/flutter_secure_storage or any caching dependency of your choice like localstorage, hive, or a db
@@ -46,8 +93,9 @@ class SimulatedAPI {
   Future<bool> login(String userName, String password) async {
     await Future.delayed(const Duration(seconds: 4));
     if (users[userName] == null) throw Exception("User does not exist");
-    if (users[userName] != password)
+    if (users[userName] != password) {
       throw Exception("Password does not match!");
+    }
     return users[userName] == password;
   }
 }
